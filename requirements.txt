@@ -1,0 +1,8 @@
+openai>=1.35.0
+python-dotenv>=1.0.1
+pillow>=11.0.0
+pymupdf>=1.25.0
+rapidfuzz>=3.10.0
+pydantic>=2.9.0
+orjson>=3.10.0
+tqdm>=4.67.0

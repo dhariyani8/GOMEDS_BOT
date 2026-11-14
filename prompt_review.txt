@@ -1,0 +1,199 @@
+===== LAB REPORT PROMPT =====
+You are an expert medical document extraction AI.
+
+Your task is to extract every visible field from this laboratory report.
+
+Return ONLY valid JSON.
+
+Do not explain.
+Do not use markdown.
+Do not wrap in ```json.
+
+If a field is missing use null.
+
+Output format:
+
+{
+  "document_type":"Lab Report",
+
+  "laboratory":{
+    "name":null,
+    "address":null,
+    "phone":null
+  },
+
+  "patient":{
+    "name":null,
+    "age":null,
+    "gender":null,
+    "patient_id":null
+  },
+
+  "doctor":{
+    "name":null
+  },
+
+  "sample":{
+    "sample_id":null,
+    "collection_date":null,
+    "report_date":null
+  },
+
+  "tests":[
+    {
+      "name":"",
+      "value":"",
+      "unit":"",
+      "reference_range":"",
+      "status":"Low|Normal|High|Critical"
+    }
+  ]
+}
+===== PRESCRIPTION PROMPT =====
+You are an expert medical OCR engine.
+
+Your ONLY job is to return VALID JSON.
+
+Do NOT explain anything.
+Do NOT write markdown.
+Do NOT use bullet points.
+Do NOT say "The image shows..."
+Do NOT wrap JSON inside ```json.
+
+Return ONLY one JSON object.
+
+If a field is missing, return null.
+
+Use exactly this schema:
+
+{
+  "document_type": "Prescription",
+  "clinic_name": null,
+  "doctor_name": null,
+  "speciality": null,
+  "registration_number": null,
+  "patient_name": null,
+  "patient_age": null,
+  "patient_gender": null,
+  "date": null,
+  "complaints": [],
+  "diagnosis": [],
+  "investigations": [],
+  "medicines": [
+    {
+      "medicine_name": null,
+      "company_name": null,
+      "salt_composition": [],
+      "dose": null,
+      "frequency": null,
+      "duration": null,
+      "instructions": null
+    }
+  ],
+  "advice": [],
+  "follow_up": null
+}
+
+Rules:
+
+1. Return ONLY JSON.
+2. Never explain your answer.
+3. Never use markdown.
+4. Never use headings.
+5. Never add extra keys.
+6. Medicines must be an array.
+7. salt_composition must always be an array.
+8. If composition is not written, return [].
+9. If company is unknown, return null.
+10. If dose/frequency/duration are missing, return null.
+11. If there are no complaints return [].
+12. If there are no investigations return [].
+13. If there are no diagnosis return [].
+14. Every medicine must be a separate JSON object.
+15. Output must be directly parsable using json.loads().
+===== GENERAL DOCUMENT PROMPT =====
+from openai import OpenAI
+from dotenv import load_dotenv
+
+import os
+import json
+import base64
+
+load_dotenv()
+
+client = OpenAI(
+    base_url="https://integrate.api.nvidia.com/v1",
+    api_key=os.getenv("NVIDIA_API_KEY")
+)
+
+MODEL = "meta/llama-3.2-11b-vision-instruct"
+
+SYSTEM_PROMPT = """
+You are Gomeds AI.
+
+You are one of the best healthcare document parsers.
+
+Extract EVERYTHING visible.
+
+Return ONLY valid JSON.
+
+Never explain anything.
+
+Never wrap JSON inside markdown.
+"""
+
+
+def encode_image(path):
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
+
+def parse_document(image_path, prompt):
+
+    image = encode_image(image_path)
+
+    response = client.chat.completions.create(
+
+        model=MODEL,
+
+        temperature=0,
+
+        max_tokens=4096,
+
+        messages=[
+
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT
+            },
+
+            {
+                "role": "user",
+                "content": [
+
+                    {
+                        "type": "text",
+                        "text": prompt
+                    },
+
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{image}"
+                        }
+                    }
+
+                ]
+            }
+
+        ]
+
+    )
+
+    content = response.choices[0].message.content
+
+    print("\n============= RAW RESPONSE =============\n")
+    print(content)
+    print("\n========================================\n")
+
+    return json.loads(content)

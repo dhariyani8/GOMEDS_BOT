@@ -1,0 +1,15 @@
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
+
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
+
+client = OpenAI(
+    base_url="https://integrate.api.nvidia.com/v1",
+    api_key=NVIDIA_API_KEY,
+)
+
+CLASSIFIER_MODEL = "meta/llama-3.2-11b-vision-instruct"
+PARSER_MODEL = "meta/llama-3.2-11b-vision-instruct"

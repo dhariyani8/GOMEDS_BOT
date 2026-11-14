@@ -1,0 +1,53 @@
+from engine.classifier import classify_document
+from engine.router import route_document
+from engine.pdf_utils import pdf_to_images
+import json
+
+path = input("Image or PDF: ").strip()
+
+# ---------------- PDF ----------------
+
+if path.lower().endswith(".pdf"):
+
+    pages = pdf_to_images(path)
+
+    all_results = []
+
+    for i, page in enumerate(pages):
+
+        print(f"\n================ PAGE {i+1} ================\n")
+
+        classification = classify_document(page)
+
+        print("Classification:")
+        print(json.dumps(classification, indent=4))
+
+        result = route_document(
+            classification["document_type"],
+            page
+        )
+
+        print("\nParsed:")
+        print(json.dumps(result, indent=4))
+
+        all_results.append(result)
+
+    print("\n================ FINAL PDF RESULT ================\n")
+    print(json.dumps(all_results, indent=4))
+
+# ---------------- IMAGE ----------------
+
+else:
+
+    classification = classify_document(path)
+
+    print("\nClassification:")
+    print(json.dumps(classification, indent=4))
+
+    result = route_document(
+        classification["document_type"],
+        path
+    )
+
+    print("\nParsed:")
+    print(json.dumps(result, indent=4))
